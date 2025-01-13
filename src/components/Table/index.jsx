@@ -5,6 +5,7 @@ import PropTypes from 'prop-types'
 Table.propTypes = {
     rows: PropTypes.array,
     columns: PropTypes.array,
+    mapRef: PropTypes.object,
 }
 
 function QuickSearchToolbar() {
@@ -20,13 +21,18 @@ function QuickSearchToolbar() {
     );
 }
 
-export default function Table({ rows, columns }) {
+export default function Table({ rows, columns, mapRef }) {
+  function onClickRow(row) {
+    row = row.row;
+    mapRef.current.addMarker(row.lon_lat);
+  }
+
   return (
     <div style={{ minHeight: 300, maxHeight: 600, width: '100%' }}>
         <DataGrid
             rows={rows}
             columns={columns}
-            onRowClick={(row) => console.log(row)}
+            onRowClick={onClickRow}
             slots={{ toolbar: QuickSearchToolbar  }}
         />
     </div>

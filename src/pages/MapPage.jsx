@@ -1,6 +1,6 @@
 import Map from '../components/Map';
 import useLocalStorage from '../hooks/useLocalStorage';
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Button,
@@ -27,14 +27,14 @@ export default function MapPage() {
   ];
 
   const [rows, setRows] = useState([])
-  
+  const mapRef = useRef(null);
   const [contacts, setContacts] = useContext(ContactsContext);
   const navigate = useNavigate();
   const localstorage = useLocalStorage();
   const [user, setUser] = useState(null);
-  const [markersToDisplay, setMarkersToDisplay] = useState({});
   const [activeTab, setActiveTab] = useState(0);
 
+  // fake cpf: 49358450070
 
   useEffect(() => {
     if(!localstorage.getValue('isLoggedIn') || !localstorage.getValue('user')){
@@ -46,14 +46,11 @@ export default function MapPage() {
     }
 
     const contacts_from_storage = localstorage.getValue('contacts');
-    setContacts(contacts_from_storage);
-    
-    setTimeout(() => {
-      setMarkersToDisplay({id: 'teste', lngLat:[-50.57, -25.0], method: 'add'});
-    }, 2000);
+    setContacts(contacts_from_storage);    
   }, []);
 
   useEffect(() => {
+    if(!contacts || contacts.length === 0) return;
     contacts.forEach((contact, index) => {
       setRows([...rows, {
         id: index,
@@ -121,13 +118,13 @@ export default function MapPage() {
                 <ContactForm />
               )
               : (
-                <Table rows={rows} columns={columns}/>
+                <Table rows={rows} columns={columns} mapRef={mapRef}/>
               )
             }
           </Paper>
         </Grid2>
         <Grid2 size={{ xs: 12, md: 7 }} height={'100%' }>
-          <Map center={[-50.57, -25.0]} zoom={5} markersToDisplay={markersToDisplay} />
+          <Map center={[-50.57, -25.0]} zoom={5} ref={mapRef} />
         </Grid2>
     </Grid2>
   )

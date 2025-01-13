@@ -27,8 +27,22 @@ export default function ContactForm() {
   const handleGetCEP = async (cep) => {
     const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
     const data = await response.json();
+    const latLonData = await handleGetLatLon(data);
+    if(latLonData) {
+        data.lat = latLonData[0].lat;
+        data.lon = latLonData[0].lon;
+    } else {
+        data.lat = '';
+        data.lon = '';
+    }
     return data;
   };
+
+  const handleGetLatLon = async (address) => {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?street=${address.logradouro}&city=${address.localidade}&state=${address.estado}&format=json&limit=1`);
+    const data = await response.json();
+    return data;
+  }
 
   const handleInputChange = async (e) => {
     const { name, value } = e.target;
@@ -42,10 +56,8 @@ export default function ContactForm() {
     setFormData({ ...formData, [name]: value });
   };
 
-
   const handleSubmit = (e) => {
     e.preventDefault();
-
     const contacts = localstorage.getValue('contacts') || [];
     const contactData = {
         name: formData.name,
@@ -55,8 +67,13 @@ export default function ContactForm() {
         address: formData.address,
         cep: formData.cep,
         lat_lon: `${formData.location_data.lat}, ${formData.location_data.lon}`,
-        lon_lat: [formData.location_data.lat, formData.location_data.lon],
+        lon_lat: [formData.location_data.lon, formData.location_data.lat],
     };
+
+    if(contacts.some((contact) => contact.cpf === contactData.cpf)) {
+        alert('CPF já cadastrado!');
+        return;
+    }
     contacts.push(contactData);
     localstorage.setValue('contacts', contacts);
     setContacts([...contacts, contactData]);
@@ -101,7 +118,7 @@ export default function ContactForm() {
           name="cep"
           type="number"
           value={formData.postal_code}
-          onBlur={handleInputChange}
+          onChange={handleInputChange}
           fullWidth
           required
           error={formData.cep.length !== 8}

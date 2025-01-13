@@ -5,7 +5,7 @@ import {
     Marker,
 } from "maplibre-gl";
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { useRef, useEffect, useState  } from 'react';
+import { useRef, useEffect, useState, forwardRef, useImperativeHandle  } from 'react';
 import PropTypes from 'prop-types'
 
 // base style for the map.
@@ -34,17 +34,11 @@ const BASEMAP_STYLE = {
     ]
 };
 
-CustomMap.propTypes = {
-    center: PropTypes.array,
-    zoom: PropTypes.number,
-    markersToDisplay: PropTypes.object,
-}
-
-export default function CustomMap({center, zoom, markersToDisplay}) {
+const CustomMap = forwardRef(({center, zoom}, ref) => {
     const mapContainer = useRef(null);
     const map = useRef(null);
-
-    const [markers, setMarkers] = useState({});
+    
+    const [currentMarker, setCurrentMarker] = useState(null);
 
     useEffect(() => {
         if (map.current) return; // stops map from intializing more than once
@@ -79,12 +73,11 @@ export default function CustomMap({center, zoom, markersToDisplay}) {
     
     }, [center, zoom]);
 
-    useEffect(() => {
-        if(!markersToDisplay) return;
-        function addMarker(lngLat, id) {
+    useImperativeHandle(ref, () => ({
+        addMarker(lngLat) {
             const el = document.createElement("div");
             el.className = "marker";
-            el.key = getRamdonId();
+            el.key = getRandomId();
     
             el.style.backgroundImage = `url('/marker.png')`;
             el.style.backgroundSize = 'contain';
@@ -92,25 +85,17 @@ export default function CustomMap({center, zoom, markersToDisplay}) {
             el.style.height = '50px';
         
             let marker = new Marker({ element: el }).setLngLat(lngLat).addTo(map.current);
-            setMarkers({...markers, [id]: marker});
+            setCurrentMarker(marker);
+        },
+         removeMarker() {
+            currentMarker.remove();
+            setCurrentMarker(null);
         }
     
-        function removeMarker(id) {
-            markers[id].remove();
-            delete markers[id];
-        }
-
-
-        if(markersToDisplay?.method == 'add') {
-            addMarker(markersToDisplay.lngLat, markersToDisplay.id);
-        } else if(markersToDisplay?.method == 'remove') {
-            removeMarker(markersToDisplay.id);
-        }
-    
-    }, [markersToDisplay]);
+    }));
 
     // generates a random id
-    function getRamdonId(size = 8) {
+    function getRandomId(size = 8) {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let id = '';
         for (let i = 0; i < size; i++) {
@@ -127,4 +112,10 @@ export default function CustomMap({center, zoom, markersToDisplay}) {
             </div>
         </div>
     )
+});
+CustomMap.propTypes = {
+    center: PropTypes.array,
+    zoom: PropTypes.number,
 }
+CustomMap.displayName = 'CustomMap';
+export default CustomMap;
